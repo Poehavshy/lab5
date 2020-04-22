@@ -141,5 +141,22 @@ class Cryptographer:
         cipher = Fernet(self.key)
         self.text = cipher.decrypt(self.text)
         return self.text
+    
+    def text_to_bits(self, text, encoding='utf-8', errors='surrogatepass'):
+        bits = bin(int.from_bytes(text.encode(encoding, errors), 'big'))[2:]
+        return bits.zfill(8 * ((len(bits) + 7) // 8))
+
+    def text_from_bits(self, bits, encoding='utf-8', errors='surrogatepass'):
+        n = int(bits, 2)
+        return n.to_bytes((n.bit_length() + 7) // 8, 'big').decode(encoding, errors) or '\0'
+
+    def text_to_xor(self):
+        i = 0
+        out = ""
+        for char in self.text:
+            if i == len(self.key) - 1:
+                i = 0
+            out += chr(ord(char) ^ ord(self.key[i]))
+        self.text = out
 
 
