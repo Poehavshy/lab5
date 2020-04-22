@@ -8,6 +8,48 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram import ReplyKeyboardMarkup
 
+
+def message(update, context):
+    con = pymysql.connect(config.DB_SERVER, config.DB_USER, config.DB_PASSWORD, config.DB_DATABASE)
+    with con:
+        if update.message.text.lower() == "шифрование" and status == const.STATUS[0]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[1]}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            reply_markup = get_keyboard(update.message.from_user.id, cur)
+            update.message.reply_text(text="Выбери, что установить.", reply_markup=reply_markup)
+        elif update.message.text.lower() == "дешифрование" and status == const.STATUS[0]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[6]}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            reply_markup = get_keyboard(update.message.from_user.id, cur)
+            update.message.reply_text(text="Выбери, что установить.", reply_markup=reply_markup)
+        elif status == const.STATUS[0]:
+            reply_markup = get_keyboard(update.message.from_user.id, cur)
+            update.message.reply_text(text="Я не понимаю, выбери что делать.", reply_markup=reply_markup)
+        elif update.message.text.lower().endswith("изображение") and status == const.STATUS[1]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[2]}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            update.message.reply_text(text="Отправь изображение в формате png как документ!", reply_markup=None)
+        elif update.message.text.lower().endswith("текст") and status == const.STATUS[1]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[3]}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            update.message.reply_text(text="Отправь текст который будет зашифрован", reply_markup=None)
+        elif status == const.STATUS[3]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[1]}', `text`='{update.message.text}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            reply_markup = get_keyboard(update.message.from_user.id, cur)
+            update.message.reply_text(text="Выбери, что установить.", reply_markup=reply_markup)
+        elif update.message.text.lower().endswith("ключ") and status == const.STATUS[1]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[4]}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            update.message.reply_text(text="Отправьте ключ для шифрования", reply_markup=None)
+        elif status == const.STATUS[4]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[1]}', `crypto_key`='{update.message.text}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            reply_markup = get_keyboard(update.message.from_user.id, cur)
+            update.message.reply_text(text="Выбери, что установить.", reply_markup=reply_markup)
+
+
+
 def start(update, context):
     con = pymysql.connect(config.DB_SERVER, config.DB_USER, config.DB_PASSWORD, config.DB_DATABASE)
     with con:
