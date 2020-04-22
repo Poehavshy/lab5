@@ -21,6 +21,12 @@ def main():
     updater.start_polling(timeout=123)
 
     updater.idle()
+    
+    
+def error(update, context):
+    print("ERROR: ", context.error)
+    
+    
 def photo(update, context):
     con = pymysql.connect(config.DB_SERVER, config.DB_USER, config.DB_PASSWORD, config.DB_DATABASE)
     with con:
