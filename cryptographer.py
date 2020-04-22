@@ -61,12 +61,3 @@ class Cryptographer:
                         arr[i][j][2] = tmp
         return arr
 
-
-    def text_to_xor(self):
-        i = 0
-        out = ""
-        for char in self.text:
-            if i == len(self.key) - 1:
-                i = 0
-            out += chr(ord(char) ^ ord(self.key[i]))
-        self.text = out
