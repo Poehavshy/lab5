@@ -12,6 +12,12 @@ from telegram import ReplyKeyboardMarkup
 def message(update, context):
     con = pymysql.connect(config.DB_SERVER, config.DB_USER, config.DB_PASSWORD, config.DB_DATABASE)
     with con:
+        cur = con.cursor()
+        cur.execute(f"SELECT `status` FROM `Users` WHERE `telegram_id` = '{update.message.from_user.id}';")
+        if cur.rowcount == 0:
+            return
+        res = cur.fetchall()
+        status = res[0][0]
         if update.message.text.lower() == "шифрование" and status == const.STATUS[0]:
             cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[1]}' WHERE `telegram_id`='{update.message.from_user.id}';")
             con.commit()
@@ -47,6 +53,47 @@ def message(update, context):
             con.commit()
             reply_markup = get_keyboard(update.message.from_user.id, cur)
             update.message.reply_text(text="Выбери, что установить.", reply_markup=reply_markup)
+         elif update.message.text.lower() == "завершить" and status == const.STATUS[1]:
+            cur.execute(f"SELECT `image`, `text`, `crypto_key` FROM `Users` WHERE `telegram_id` = '{update.message.from_user.id}';")
+            res = cur.fetchall()[0]
+            if res[0] is not None and res[1] is not None and res[2] is not None:
+                update.message.reply_text(text="Идёт шифрование...", reply_markup=None)
+                crypto = cryptographer.Cryptographer(f"photo/encrypt/before/{res[0]}", res[2], res[1])
+                image = crypto.encrypt()
+                reply_markup = ReplyKeyboardMarkup([['В начало']], resize_keyboard=True, one_time_keyboard=True)
+                update.message.reply_text(text="Зашифрованная картинка:", reply_markup=reply_markup)
+                context.bot.send_document(chat_id=update.message.from_user.id, document=open(image, 'rb'))
+                cur.execute(f"UPDATE `Users` SET `status`='{const.STATUS[5]}' WHERE `telegram_id`='{update.message.from_user.id}';")
+        elif update.message.text.lower() == "в начало" and (status == const.STATUS[5] or status == const.STATUS[9]):
+            cur.execute(f"UPDATE `Users` SET `name`='{update.message.from_user.first_name}', `status`='{const.STATUS[0]}', `image`=NULL, `text`=NULL, `crypto_key`=NULL WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            reply_markup = ReplyKeyboardMarkup([['Шифрование', 'Дешифрование']], resize_keyboard=True, one_time_keyboard=True)
+            update.message.reply_text(text="Приветствую, я CryptoBot, умею шифровать сообщение в картинку.", reply_markup=reply_markup)
+        elif update.message.text.lower().endswith("изображение") and status == const.STATUS[6]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[7]}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            update.message.reply_text(text="Отправь изображение в формате png как документ!", reply_markup=None)
+        elif update.message.text.lower().endswith("ключ") and status == const.STATUS[6]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[8]}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            update.message.reply_text(text="Отправьте ключ для дешифрования", reply_markup=None)
+        elif status == const.STATUS[8]:
+            cur.execute(f"UPDATE `Users` set `status`='{const.STATUS[6]}', `crypto_key`='{update.message.text}' WHERE `telegram_id`='{update.message.from_user.id}';")
+            con.commit()
+            reply_markup = get_keyboard(update.message.from_user.id, cur)
+            update.message.reply_text(text="Выбери, что установить.", reply_markup=reply_markup)
+        elif update.message.text.lower() == "завершить" and status == const.STATUS[6]:
+            cur.execute(f"SELECT `image`, `crypto_key` FROM `Users` WHERE `telegram_id` = '{update.message.from_user.id}';")
+            res = cur.fetchall()[0]
+            if res[0] is not None and res[1] is not None:
+                update.message.reply_text(text="Идёт дешифрование...", reply_markup=None)
+                crypto = cryptographer.Cryptographer(f"photo/decrypt/before/{res[0]}", res[1])
+                text = crypto.decrypt()
+                reply_markup = ReplyKeyboardMarkup([['В начало']], resize_keyboard=True, one_time_keyboard=True)
+                update.message.reply_text(text="Расшифрованный текст:", reply_markup=None)
+                update.message.reply_text(text=text, reply_markup=reply_markup)
+                cur.execute(f"UPDATE `Users` SET `status`='{const.STATUS[9]}' WHERE `telegram_id`='{update.message.from_user.id}';")
+
 
 
 
