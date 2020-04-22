@@ -111,4 +111,35 @@ class Cryptographer:
         path = f"photo/encrypt/after/{datetime.datetime.today().strftime('%Y-%m-%d-%H.%M.%S') + 'crypto.png'}"
         self.image.save(path, "PNG")
         return path
+    
+    def decrypt(self):
+        end = False
+        bytes = ""
+        dct = [[0] * 8 for i in range(8)]
+        temp = [[0] * 8 for i in range(8)]
+        for i in range(0, self.width - 1, 8):
+            for j in range(0, self.height - 1, 8):
+                for x in range(8):
+                    for y in range(8):
+                        temp[x][y] = [
+                            self.pix[x+j, y+i][0],
+                            self.pix[x+j, y+i][1],
+                            self.pix[x+j, y+i][2]
+                        ]
+                dct = self.dct(dct, temp)
+                k = abs(dct[3][4]) - abs(dct[4][3])
+                if k >= 25:
+                    bytes+="1"
+                elif k <= -25:
+                    bytes+="0"
+                else:
+                    end = True
+                    break
+            if end == True:
+                break
+        self.text = self.text_from_bits(bytes)
+        cipher = Fernet(self.key)
+        self.text = cipher.decrypt(self.text)
+        return self.text
+
 
