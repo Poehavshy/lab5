@@ -70,3 +70,45 @@ class Cryptographer:
                 i = 0
             out += chr(ord(char) ^ ord(self.key[i]))
         self.text = out
+    
+    
+    def encrypt(self):
+        dct = [[0] * 8 for i in range(8)]
+        temp = [[0] * 8 for i in range(8)]
+        k = 0
+        l = 0
+        s = 0
+        cipher = Fernet(self.key)
+        self.text = cipher.encrypt(self.text)
+        bytes = self.text_to_bits(self.text)
+
+        for i in range(0, self.width - 1, 8):
+            for j in range(0, self.height - 1, 8):
+                if l >= len(bytes):
+                    break
+                for x in range(8):
+                    for y in range(8):
+                        temp[x][y] = [
+                            self.pix[x+j, y+i][0],
+                            self.pix[x+j, y+i][1],
+                            self.pix[x+j, y+i][2]
+                        ]
+                dct = self.dct(dct, temp)
+                k = abs(dct[3][4]) - abs(dct[4][3])
+                if bytes[l] == '1':
+                    if k <= 25:
+                        dct[3][4] = (abs(dct[4][3]) + 150) if dct[3][4] >= 0 else -1 * (abs(dct[4][3]) + 150)
+                else:
+                    if k >= -25:
+                        dct[4][3] = (abs(dct[3][4]) + 150) if dct[4][3] >= 0 else -1 * (abs(dct[3][4]) + 150)
+                temp = self.idct(dct, temp)
+                for x in range(8):
+                    for y in range(8):
+                        self.draw.point((x + j, y + i), (temp[x][y][0], temp[x][y][1], temp[x][y][2]))
+                l+=1
+            if l >= len(self.text)*8:
+                break
+        path = f"photo/encrypt/after/{datetime.datetime.today().strftime('%Y-%m-%d-%H.%M.%S') + 'crypto.png'}"
+        self.image.save(path, "PNG")
+        return path
+
