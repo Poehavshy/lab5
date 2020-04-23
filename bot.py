@@ -113,7 +113,7 @@ def main():
     
     
 def error(update, context):
-    print("ERROR: ", context.error)
+    print("ERROR: errorerror", context.error)
     
 # берем из feature
 def test(test):
