@@ -127,6 +127,7 @@ def main():
     
     
 def error(update, context):
+    print('NOT OK')
     print("ERROR: ", context.error)
     
     
