@@ -26,6 +26,10 @@ def main():
 def error(update, context):
     print("ERROR: ", context.error)
     
+
+def test(test):
+    print(test)
+    
     
 def photo(update, context):
     con = pymysql.connect(config.DB_SERVER, config.DB_USER, config.DB_PASSWORD, config.DB_DATABASE)
