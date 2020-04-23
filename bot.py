@@ -8,14 +8,14 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram import ReplyKeyboardMarkup
 
-
-def message(update, context):
+# берем из обеих веток
+def messagetext(update, context, bot):
     con = pymysql.connect(config.DB_SERVER, config.DB_USER, config.DB_PASSWORD, config.DB_DATABASE)
     with con:
         cur = con.cursor()
         cur.execute(f"SELECT `status` FROM `Users` WHERE `telegram_id` = '{update.message.from_user.id}';")
-        # берем из обеих веток
-        if cur.rowcount == 1:
+        
+        if cur.rowcount == 0:
             print('not OK')
             return
         res = cur.fetchall()
@@ -97,8 +97,8 @@ def message(update, context):
                 cur.execute(f"UPDATE `Users` SET `status`='{const.STATUS[9]}' WHERE `telegram_id`='{update.message.from_user.id}';")
 
 
-
-def main():
+#берем с future
+def main_main():
     updater = Updater(token=config.TOKEN, use_context=True, request_kwargs=config.REQUEST_KWARGS)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('start', start))
@@ -111,11 +111,10 @@ def main():
 
     updater.idle()
     
-    
-def error(update, context):
+# берем из мастера
+def error_error(update, context):
     print("ERROR: errorerror", context.error)
     
-# берем из feature
 def test(test):
     print(test)
     
@@ -151,5 +150,4 @@ def photo(update, context):
 
 if __name__ == "__main__":
     main()
-    # берем из master
     print('OK')
