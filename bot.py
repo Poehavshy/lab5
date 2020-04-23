@@ -8,15 +8,13 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram import ReplyKeyboardMarkup
 
-# берем из обеих веток
+#both
 def messagetext(update, context, bot):
     con = pymysql.connect(config.DB_SERVER, config.DB_USER, config.DB_PASSWORD, config.DB_DATABASE)
     with con:
         cur = con.cursor()
         cur.execute(f"SELECT `status` FROM `Users` WHERE `telegram_id` = '{update.message.from_user.id}';")
-        
         if cur.rowcount == 0:
-            print('not OK')
             return
         res = cur.fetchall()
         status = res[0][0]
@@ -97,7 +95,23 @@ def messagetext(update, context, bot):
                 cur.execute(f"UPDATE `Users` SET `status`='{const.STATUS[9]}' WHERE `telegram_id`='{update.message.from_user.id}';")
 
 
-#берем с future
+
+
+def start(update, context):
+    con = pymysql.connect(config.DB_SERVER, config.DB_USER, config.DB_PASSWORD, config.DB_DATABASE)
+    with con:
+        cur = con.cursor()
+        cur.execute(f"SELECT * FROM `Users` WHERE `telegram_id` = '{update.message.from_user.id}';")
+        if cur.rowcount == 0:
+            cur.execute(f"INSERT INTO `Users` SET `telegram_id`='{update.message.from_user.id}',`name`='{update.message.from_user.first_name}', `status`='{const.STATUS[0]}', `image`=NULL, `text`=NULL, `crypto_key`=NULL;")
+        else:
+            cur.execute(f"UPDATE `Users` SET `name`='{update.message.from_user.first_name}', `status`='{const.STATUS[0]}', `image`=NULL, `text`=NULL, `crypto_key`=NULL WHERE `telegram_id`='{update.message.from_user.id}';")
+        con.commit()
+        reply_markup = ReplyKeyboardMarkup([['Шифрование', 'Дешифрование']], resize_keyboard=True, one_time_keyboard=True)
+        update.message.reply_text(text="Приветствую, я CryptoBot, умею шифровать сообщение в картинку.", reply_markup=reply_markup)
+
+
+# future
 def main_main():
     updater = Updater(token=config.TOKEN, use_context=True, request_kwargs=config.REQUEST_KWARGS)
     dp = updater.dispatcher
@@ -111,12 +125,9 @@ def main_main():
 
     updater.idle()
     
-# берем из мастера
+# master
 def error_error(update, context):
-    print("ERROR: errorerror", context.error)
-    
-def test(test):
-    print(test)
+    print("ERROR: ", context.error)
     
     
 def photo(update, context):
@@ -150,4 +161,3 @@ def photo(update, context):
 
 if __name__ == "__main__":
     main()
-    print('OK')
